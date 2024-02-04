@@ -31,7 +31,9 @@
 #define CMD_UPDATE_DATAFLASH        0x000000C3
 #define CMD_WRITE_CHECKSUM          0x000000C9
 #define CMD_GET_FLASHMODE           0x000000CA
-
+#define CMD_APROM_ERASE           0x000000FA
+#define CMD_APROM_WRITE           0x000000FB
+#define CMD_APROM_READ           0x000000FC
 #define CMD_RESEND_PACKET           0x000000FF
 
 

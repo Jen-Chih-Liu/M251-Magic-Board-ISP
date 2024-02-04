@@ -330,6 +330,13 @@ void ISP_COMMAND::RUN_TO_APROM_USB(void)
 	PacketNumber+=2;
 }
 
+void ISP_COMMAND::RUN_TO_LDROM_USB(void)
+{
+	unsigned char cmd[Package_Size] = { 0xac,0,0,0,
+		(PacketNumber & 0xff),((PacketNumber >> 8) & 0xff),((PacketNumber >> 16) & 0xff),((PacketNumber >> 24) & 0xff) };
+	pUSB.WriteFile((unsigned char *)&cmd, sizeof(cmd), &Length, 2000);
+	PacketNumber += 2;
+}
 
 void ISP_COMMAND::RUN_TO_APROM_UART(void)
 {
@@ -339,6 +346,13 @@ void ISP_COMMAND::RUN_TO_APROM_UART(void)
 	PacketNumber+=2;
 }
 
+void ISP_COMMAND::RUN_TO_LDROM_UART(void)
+{
+	unsigned char cmd[Package_Size] = { 0xac,0,0,0,
+	(PacketNumber & 0xff),((PacketNumber >> 8) & 0xff),((PacketNumber >> 16) & 0xff),((PacketNumber >> 24) & 0xff) };
+	WriteFile(m_hCom, cmd, Package_Size, &iBytesWritten, NULL);
+	PacketNumber += 2;
+}
 ISP_STATE ISP_COMMAND::READ_PID_USB(void)
 {
 	clock_t start_time, end_time;

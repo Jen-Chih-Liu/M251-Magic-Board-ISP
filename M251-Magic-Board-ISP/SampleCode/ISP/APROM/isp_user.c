@@ -56,7 +56,7 @@ int ParseCmd(unsigned char *buffer, uint8_t len)
     static uint32_t StartAddress, StartAddress_bak, TotalLen, TotalLen_bak, LastDataLen, g_packno = 1;
     uint8_t *response;
     uint16_t lcksum;
-    uint32_t lcmd, srclen, i, regcnf0, security;
+    uint32_t lcmd, srclen, i;
     unsigned char *pSrc;
     static uint32_t gcmd;
     response = response_buff;
@@ -66,9 +66,7 @@ int ParseCmd(unsigned char *buffer, uint8_t len)
     outpw(response + 4, 0);
     pSrc += 8;
     srclen -= 8;
-    ReadData(Config0, Config0 + 16, (uint32_t *)(response + 8)); //read config
-    regcnf0 = *(uint32_t *)(response + 8);
-    security = regcnf0 & 0x2;
+
 
     if (lcmd == CMD_SYNC_PACKNO)
     {
@@ -101,6 +99,16 @@ int ParseCmd(unsigned char *buffer, uint8_t len)
         //return 1: APROM, 2: LDROM
         outpw(response + 8, (FMC->ISPCTL & 0x2) ? 2 : 1);
     }
+		else if (lcmd == CMD_APROM_ERASE)
+    {
+     //ERASE AP PAGE  
+		  EraseAP(0X20000, 512);		//it is fix in 0x20000	
+    }
+		else if (lcmd == CMD_APROM_WRITE)
+    {
+       
+    }
+		
 
 out:
     lcksum = Checksum(buffer, len);

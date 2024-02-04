@@ -21,7 +21,11 @@ int _tmain(int argc, _TCHAR* argv[])
 #endif
 	theArgs.add<string>("COM", 'c', "com port number", false, ""); 
 	theArgs.add<bool>("USB", 'u', "USB port", false, false);
-	theArgs.add<bool>("Time", 't', "show progamming", false, false);
+	theArgs.add<bool>("All", 'g', "ldrom boot chek, check version, erase, verify, boot to aprom ", false, false);
+	theArgs.add<bool>("RUNAP", 'a', "run aprom run", false, false);
+	theArgs.add<bool>("RUNLD", 'l', "run ldrom run", false, false);
+	theArgs.add<bool>("BC", 'b', "Boot Check", false, false);
+	theArgs.add<bool>("Time", 't', "show progamming time", false, false);
 	theArgs.set_program_name(argv[0]);
 
 	theArgs.parse_check(argc, &argv[0]);
@@ -130,26 +134,44 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 		ISP->SN_PACKAGE_UART();
 		ISP->SN_PACKAGE_UART();
-		unsigned int temp = ISP->READFW_VERSION_UART();
-
-		printf("FW version: 0x%x \n\r", temp);
-
-		if (ISP->READ_PID_UART() == RES_FALSE)
+		if (theArgs.get<bool>("All") == 1)
 		{
-			printf("CHIP NO FOUND\n\r");
-			goto UART_EXIT;
+			unsigned int temp = ISP->READFW_VERSION_UART();
+
+			printf("FW version: 0x%x \n\r", temp);
+
+			if (ISP->READ_PID_UART() == RES_FALSE)
+			{
+				printf("CHIP NO FOUND\n\r");
+				goto UART_EXIT;
+			}
+			if (ISP->CHECK_BOOT_UART() != 2)
+			{
+				printf("it is boot in aprom\n\r");
+				goto UART_EXIT;
+			}
+			//READ CONFIG
+			printf("config \n\r");
+			ISP->READ_CONFIG_UART();
+
+			//test updata aprom
+			ISP->UPDATE_APROM_UART();
+
+			//reboot mcu to aprom
+			ISP->RUN_TO_APROM_UART();
 		}
-
-		//READ CONFIG
-		printf("config \n\r");
-		ISP->READ_CONFIG_UART();
-
-		//test updata aprom
-		ISP->UPDATE_APROM_UART();
-
-		//reboot mcu to aprom
-		ISP->RUN_TO_APROM_UART();
-
+		if (theArgs.get<bool>("BC") == 1)
+		{
+			ISP->CHECK_BOOT_UART();
+		}
+		if (theArgs.get<bool>("RUNAP") == 1)
+		{
+			ISP->RUN_TO_APROM_UART();
+		}
+		if (theArgs.get<bool>("RUNLD") == 1)
+		{
+			ISP->RUN_TO_LDROM_UART();
+		}
 	UART_EXIT:
 		ISP->CLOSE_UART_PORT();
 		delete ISP;
@@ -168,24 +190,43 @@ int _tmain(int argc, _TCHAR* argv[])
 		//START ;
 		ISP->SN_PACKAGE_USB();
 		ISP->SN_PACKAGE_USB();
-		//CHECK FW
-		printf("FW version: 0x%x \n\r", ISP->READFW_VERSION_USB());
-		//CHECK PID
-		if (ISP->READ_PID_USB() == RES_FALSE)
+		if (theArgs.get<bool>("All") == 1)
 		{
-			printf("CHIP NO FOUND\n\r");
-			goto USB_EXIT;
+			//CHECK FW
+			printf("FW version: 0x%x \n\r", ISP->READFW_VERSION_USB());
+			//CHECK PID
+			if (ISP->READ_PID_USB() == RES_FALSE)
+			{
+				printf("CHIP NO FOUND\n\r");
+				goto USB_EXIT;
+			}
+			if (ISP->CHECK_BOOT_USB() != 2)
+			{
+				printf("it is boot in aprom\n\r");
+				goto USB_EXIT;
+			}
+			//READ CONFIG
+			printf("config \n\r");
+			ISP->READ_CONFIG_USB();
+
+			//test updata aprom
+			ISP->UPDATE_APROM_USB();
+
+			//reboot mcu to aprom
+			ISP->RUN_TO_APROM_USB();
 		}
-		//READ CONFIG
-		printf("config \n\r");
-		ISP->READ_CONFIG_USB();
-
-		//test updata aprom
-		ISP->UPDATE_APROM_USB();
-
-		//reboot mcu to aprom
-		ISP->RUN_TO_APROM_USB();
-
+		if (theArgs.get<bool>("BC") == 1)
+		{
+			ISP->CHECK_BOOT_USB();
+		}
+		if (theArgs.get<bool>("RUNAP") == 1)
+		{
+			ISP->RUN_TO_APROM_USB();
+		}
+		if (theArgs.get<bool>("RUNLD") == 1)
+		{
+			ISP->RUN_TO_LDROM_USB();
+		}
 	USB_EXIT:
 		//close usb port
 		ISP->CLOSE_USB_PORT();

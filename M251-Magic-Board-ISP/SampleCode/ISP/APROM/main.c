@@ -103,8 +103,7 @@ int32_t main(void)
     /* Init system and multi-function I/O */
     SYS_Init();
 
-    FMC->ISPCTL |= FMC_ISPCTL_ISPEN_Msk;
-    
+
 	
         /* Open USB controller */
         USBD_Open(&gsInfo, HID_ClassRequest, NULL);
@@ -122,15 +121,17 @@ int32_t main(void)
         USBD_CLR_INT_FLAG(USBD_INTSTS_SOFIF_Msk);
 
         /* Using polling mode and Removed Interrupt Table to reduce code size for M251 */
-        while (1)
-        {
+   
 					
 					
 					  //check vbus is plug in
-					
-            /* Start USB trim function if it is not enabled. */
-            if ((SYS->HIRCTRIMCTL & SYS_HIRCTRIMCTL_FREQSEL_Msk) != 0x1)
-            {
+					 while (USBD_IS_ATTACHED())
+					 {
+					    FMC->ISPCTL |= FMC_ISPCTL_ISPEN_Msk;
+              FMC->ISPCTL |= FMC_ISPCTL_APUEN_Msk;
+              /* Start USB trim function if it is not enabled. */
+              if ((SYS->HIRCTRIMCTL & SYS_HIRCTRIMCTL_FREQSEL_Msk) != 0x1)
+              {
                 /* Start USB trim only when USB signal arrived */
                 if (USBD->INTSTS & USBD_INTSTS_SOFIF_Msk)
                 {
@@ -177,7 +178,7 @@ int32_t main(void)
             }
         }
 
-
+			
 
 
     /* Trap the CPU */

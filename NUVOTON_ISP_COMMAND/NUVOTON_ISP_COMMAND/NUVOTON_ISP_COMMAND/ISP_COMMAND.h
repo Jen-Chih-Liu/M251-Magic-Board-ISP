@@ -74,7 +74,8 @@ public:
 	ISP_STATE UPDATE_APROM_USB(void);
 	void RUN_TO_APROM_UART(void);
 	void RUN_TO_APROM_USB(void);
-
+	void RUN_TO_LDROM_UART(void);
+	void RUN_TO_LDROM_USB(void);
 	//ISP_STATE UPDATE_DATAFLASH(void);
 	ISP_STATE CHECK_UART_LINK(void);
 	ISP_COMMAND(void);
