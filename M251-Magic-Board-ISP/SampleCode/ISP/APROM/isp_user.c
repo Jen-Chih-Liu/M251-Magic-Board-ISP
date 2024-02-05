@@ -108,7 +108,31 @@ int ParseCmd(unsigned char *buffer, uint8_t len)
     {
        WriteData(0X20000, 0X20000 + 48, (uint32_t *)pSrc); 
     }
-		
+		else if (lcmd == CMD_RUN_APROM || lcmd == CMD_RUN_LDROM || lcmd == CMD_RESET)
+    {
+        outpw(&SYS->RSTSTS, 3);//clear bit
+
+        /* Set BS */
+        if (lcmd == CMD_RUN_APROM)
+        {
+            i = (FMC->ISPCTL & 0xFFFFFFFC);
+        }
+        else if (lcmd == CMD_RUN_LDROM)
+        {
+            i = (FMC->ISPCTL & 0xFFFFFFFC);
+            i |= 0x00000002;
+        }
+        else
+        {
+            i = (FMC->ISPCTL & 0xFFFFFFFE);//ISP disable
+        }
+
+        outpw(&FMC->ISPCTL, i);
+        NVIC_SystemReset();
+
+        /* Trap the CPU */
+        while (1);
+    }
 
 out:
     lcksum = Checksum(buffer, len);
