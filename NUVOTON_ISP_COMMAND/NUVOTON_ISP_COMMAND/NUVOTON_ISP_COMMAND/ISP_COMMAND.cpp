@@ -318,7 +318,7 @@ unsigned int ISP_COMMAND::CHECK_BOOT_USB(void)
 	
 	PacketNumber += 2;
 
-	return (buffer[8] | ((buffer[9] << 8) & 0xff00) | ((buffer[10] << 16) & 0xff0000) | ((buffer[11] << 24) & 0xff000000));
+	return (buffer[8]);
 }
 
 
@@ -595,6 +595,7 @@ ISP_STATE ISP_COMMAND::File_Open_APROM(_TCHAR* temp)
 
 void ISP_COMMAND::APROM_AND_CHECKSUM(void)
 {
+	APROM_SIZE = baprom_size;
 	//write checksum in aprom buffer
 	W_APROM_BUFFER[(APROM_SIZE)-8] = (file_size >> 0) & 0xff;
 	W_APROM_BUFFER[(APROM_SIZE)-7] = (file_size >> 8) & 0xff;

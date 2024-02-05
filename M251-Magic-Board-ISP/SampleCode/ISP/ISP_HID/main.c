@@ -58,7 +58,7 @@ void SYS_Init(void)
     SYS->GPA_MFPH &= ~(SYS_GPA_MFPH_PA12MFP_Msk | SYS_GPA_MFPH_PA13MFP_Msk | SYS_GPA_MFPH_PA14MFP_Msk | SYS_GPA_MFPH_PA15MFP_Msk);
 }
 
-volatile uint32_t totallen, cksum;
+volatile uint32_t totallen=0, cksum=0,code_check_flash=0;
 void USBD_IRQHandler(void);
 __attribute__((aligned(4))) static uint8_t aprom_buf[FMC_FLASH_PAGE_SIZE];
 static uint16_t Checksum (unsigned char *buf, int len)
@@ -110,15 +110,18 @@ int32_t main(void)
 	  FMC_Read_User(g_ckbase, &totallen);
 	  FMC_Read_User(g_ckbase+4, &cksum);
 	
+
 if((inpw(&SYS->RSTSTS)&0x3) == 0x00)//check reset flag and por flag is clear
    {
 	 goto _LDROM_LOOP;
 	 }
+
 	  if(totallen > g_apromSize) 
 		{
 				goto _LDROM_LOOP;
 	  }
-	  if(CalCheckSum(0x0, totallen) == cksum)			   
+		code_check_flash=CalCheckSum(0x0, totallen);
+	  if( code_check_flash== (cksum&0xffff))			   
     {
 			goto _APROM;
 		}

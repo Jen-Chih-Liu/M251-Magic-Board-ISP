@@ -1,7 +1,7 @@
 #pragma once
 #include "afxwin.h"
 #include "afxcmn.h"
-#define aprom_size 128*1024
+#define baprom_size 128*1024
 typedef enum {
 	RES_FALSE = 0,		
 	RES_PASS,		    
@@ -34,7 +34,7 @@ private:
 	//接收报告用的OVERLAPPED。
 	OVERLAPPED ReadOverlapped;
 public:
-	unsigned char W_APROM_BUFFER[aprom_size];
+	unsigned char W_APROM_BUFFER[baprom_size];
     unsigned int file_size;
 	unsigned int file_checksum;
 	unsigned int file_checksum_temp;

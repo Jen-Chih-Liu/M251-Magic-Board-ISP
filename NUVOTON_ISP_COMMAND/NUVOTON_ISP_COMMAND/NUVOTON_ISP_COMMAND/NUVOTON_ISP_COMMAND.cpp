@@ -4,7 +4,13 @@
 #include <time.h>
 #include "cmdline.h"
 #include "stdio.h"
-
+//HOW TO RUN 
+//NUVOTON_ISP_COMMAND.exe -? =>show supports all command
+//NUVOTON_ISP_COMMAND.EXE -u 1 -b 1  => usb port, DUMP BOOT state
+//NUVOTON_ISP_COMMAND.EXE -u 1 -l 1  => usb port, jumper to ldrom
+//NUVOTON_ISP_COMMAND.EXE -u 1 -a 1  => usb port, jumper to arpom
+//NUVOTON_ISP_COMMAND.EXE -u 1 -v 1  => usb port, dump fw version
+//NUVOTON_ISP_COMMAND.exe -u 1 -g 1 -f c:\APROM_DEMO.bin => usb port, open bin file and do erase, program, verify
 //#define bin_inside 
 #define checksum_inside
 using namespace std;
@@ -24,45 +30,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	theArgs.add<bool>("All", 'g', "ldrom boot chek, check version, erase, verify, boot to aprom ", false, false);
 	theArgs.add<bool>("RUNAP", 'a', "run aprom run", false, false);
 	theArgs.add<bool>("RUNLD", 'l', "run ldrom run", false, false);
+	theArgs.add<bool>("FWVER", 'v', "dump fw version", false, false);
 	theArgs.add<bool>("BC", 'b', "Boot Check", false, false);
 	theArgs.add<bool>("Time", 't', "show progamming time", false, false);
 	theArgs.set_program_name(argv[0]);
-
 	theArgs.parse_check(argc, &argv[0]);
 
-#ifdef bin_inside	
 
-#else
-	try {
-		printf("APROM FILE NAME: %s\n", theArgs.get<string>("AFN").c_str());
-	}
-	catch (const std::exception &e) {
-	
-	}
-#endif
-#if 0
-	try {
-		printf("COM PORT NAME: %s\n", theArgs.get<string>("COM").c_str());
-	}
-	catch (const std::exception &e) {}
-
-	try {
-		printf("USB: %d\n", theArgs.get<bool>("USB"));
-	}
-	catch (const std::exception &e) {}
-
-	try {
-		printf("Time: %d\n", theArgs.get<bool>("Time"));
-	}
-	catch (const std::exception &e) {}
-
-	if (theArgs.get<bool>("Time") == 1)
-	{
-		clock_t start_time, end_time;
-		float total_time = 0;
-		start_time = clock(); /* mircosecond */
-	}
-#endif
 	if (theArgs.get<bool>("Time") == 1)
 	{
 
@@ -71,7 +45,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	if ((theArgs.get<bool>("USB") == 0) && (theArgs.get<string>("COM") == ""))
 	{
-		printf("please input -u 1 or -c com[n] \n\r");
+		printf("please input -? \n\r");
 		return 0;
 	}
 	if ((theArgs.get<bool>("USB") == 1) && (theArgs.get<string>("COM") != ""))
@@ -82,35 +56,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	 
 	ISP_COMMAND *ISP = new ISP_COMMAND();
 
-#ifdef bin_inside	
-	ISP->Copy_BIN_Array();
-#else
-	if (theArgs.get<string>("AFN") != "")
-	{
-		std::string AFNStr = theArgs.get<std::string>("AFN");
-		_TCHAR fileanme[256]; // 設定一個足夠大的緩衝區
-		_tcscpy(fileanme, _T(AFNStr.c_str()));
-		if (ISP->File_Open_APROM(fileanme) == RES_FILE_NO_FOUND)
-		{
-			printf("FILE NO FOUND\n\r");
-			delete ISP;
-			return 0;
-		}
-		printf("File name: %s\n\r", fileanme);
-		printf("File size: %d\n\r", ISP->file_size);
-		printf("File checksum: %d\n\r", ISP->file_checksum);
-	}
-	else {
-		printf("Please input -AFN [FILE NAME]\n\r");
-		delete ISP;
-	}
-#endif
 
-#ifdef checksum_inside
-	ISP->APROM_AND_CHECKSUM();
-	printf("aprom with check sum inside File size: %d\n\r", ISP->file_size);
-	printf("aprom with check sun inside File checksum: %d\n\r", ISP->file_checksum);
-#endif
 
 //uart interface
 	if (theArgs.get<string>("COM") != "")
@@ -136,6 +82,41 @@ int _tmain(int argc, _TCHAR* argv[])
 		ISP->SN_PACKAGE_UART();
 		if (theArgs.get<bool>("All") == 1)
 		{
+
+#ifdef bin_inside	
+			ISP->Copy_BIN_Array();
+#else
+			std::string AFN_value = theArgs.get<std::string>("AFN");
+
+			if (AFN_value.empty()) {
+				printf("Please input -AFN [FILE NAME]\n\r");
+				delete ISP;
+				return 0;
+			}
+			else
+			{
+				std::string AFNStr = theArgs.get<std::string>("AFN");
+				_TCHAR fileanme[256]; // 設定一個足夠大的緩衝區
+				_tcscpy(fileanme, _T(AFNStr.c_str()));
+				if (ISP->File_Open_APROM(fileanme) == RES_FILE_NO_FOUND)
+				{
+					printf("FILE NO FOUND\n\r");
+					delete ISP;
+					return 0;
+				}
+				printf("File name: %s\n\r", fileanme);
+				printf("File size: %d\n\r", ISP->file_size);
+				printf("File checksum: %d\n\r", ISP->file_checksum);
+			}
+
+#endif
+
+#ifdef checksum_inside
+			ISP->APROM_AND_CHECKSUM();
+			printf("aprom with check sum inside File size: %d\n\r", ISP->file_size);
+			printf("aprom with check sun inside File checksum: %d\n\r", ISP->file_checksum);
+#endif
+
 			unsigned int temp = ISP->READFW_VERSION_UART();
 
 			printf("FW version: 0x%x \n\r", temp);
@@ -162,7 +143,16 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 		if (theArgs.get<bool>("BC") == 1)
 		{
-			ISP->CHECK_BOOT_UART();
+			unsigned int temp = 0;
+			temp = ISP->CHECK_BOOT_UART();
+			printf("Mode = 1, Run in APROM\n\r");
+			printf("Mode = 2, Run in LDROM\n\r");
+			printf("BOOT:0x%x\n\r", temp);
+		}
+		if (theArgs.get<bool>("FWVER") == 1)
+		{
+			unsigned int temp = ISP->READFW_VERSION_UART();
+			printf("FW version: 0x%x \n\r", temp);
 		}
 		if (theArgs.get<bool>("RUNAP") == 1)
 		{
@@ -192,6 +182,41 @@ int _tmain(int argc, _TCHAR* argv[])
 		ISP->SN_PACKAGE_USB();
 		if (theArgs.get<bool>("All") == 1)
 		{
+#ifdef bin_inside	
+			ISP->Copy_BIN_Array();
+#else
+			std::string AFN_value = theArgs.get<std::string>("AFN");
+
+			if (AFN_value.empty()) {
+				printf("Please input -AFN [FILE NAME]\n\r");
+				delete ISP;
+				return 0;
+			}
+			else
+			{
+				std::string AFNStr = theArgs.get<std::string>("AFN");
+				_TCHAR fileanme[256]; // 設定一個足夠大的緩衝區
+				_tcscpy(fileanme, _T(AFNStr.c_str()));
+				if (ISP->File_Open_APROM(fileanme) == RES_FILE_NO_FOUND)
+				{
+					printf("FILE NO FOUND\n\r");
+					delete ISP;
+					return 0;
+				}
+				printf("File name: %s\n\r", fileanme);
+				printf("File size: %d\n\r", ISP->file_size);
+				printf("File checksum: %d\n\r", ISP->file_checksum);
+				printf("File size: 0x%x\n\r", ISP->file_size);
+				printf("File checksum: 0x%x\n\r", ISP->file_checksum);
+			}
+
+#endif
+
+#ifdef checksum_inside
+			ISP->APROM_AND_CHECKSUM();
+			printf("aprom with check sum inside File size: %d\n\r", ISP->file_size);
+			printf("aprom with check sun inside File checksum: %d\n\r", ISP->file_checksum);
+#endif
 			//CHECK FW
 			printf("FW version: 0x%x \n\r", ISP->READFW_VERSION_USB());
 			//CHECK PID
@@ -217,7 +242,16 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 		if (theArgs.get<bool>("BC") == 1)
 		{
-			ISP->CHECK_BOOT_USB();
+			unsigned int temp = 0;
+			temp=ISP->CHECK_BOOT_USB();
+			printf("Mode = 1, Run in APROM\n\r");
+			printf("Mode = 2, Run in LDROM\n\r");
+			printf("BOOT:0x%x\n\r", temp);
+		}
+		if (theArgs.get<bool>("FWVER") == 1)
+		{
+			unsigned int temp = ISP->READFW_VERSION_USB();
+			printf("FW version: 0x%x \n\r", temp);
 		}
 		if (theArgs.get<bool>("RUNAP") == 1)
 		{
