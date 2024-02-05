@@ -68,8 +68,8 @@ public:
 	ISP_STATE SN_PACKAGE_USB(void);
 
 	ISP_STATE File_Open_APROM(_TCHAR* temp);
-	
-
+	void WRITE_APROM_DATA_USB(_TCHAR* temp,unsigned char w_length);
+	void Erase_APROM_DATA_USB(void);
 	ISP_STATE UPDATE_APROM_UART(void);		
 	ISP_STATE UPDATE_APROM_USB(void);
 	void RUN_TO_APROM_UART(void);

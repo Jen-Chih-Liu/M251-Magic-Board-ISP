@@ -10,13 +10,17 @@
 //NUVOTON_ISP_COMMAND.EXE -u 1 -l 1  => usb port, jumper to ldrom
 //NUVOTON_ISP_COMMAND.EXE -u 1 -a 1  => usb port, jumper to arpom
 //NUVOTON_ISP_COMMAND.EXE -u 1 -v 1  => usb port, dump fw version
-//NUVOTON_ISP_COMMAND.exe -u 1 -g 1 -f c:\APROM_DEMO.bin => usb port, open bin file and do erase, program, verify
+//NUVOTON_ISP_COMMAND.EXE -u 1 -g 1 -f c:\APROM_DEMO.bin => usb port, open bin file and do erase, program, verify
+//NUVOTON_ISP_COMMAND.EXE -u 1 -e 1  =>erase user apdata
+//NUVOTON_ISP_COMMAND.EXE -u 1 -w 55-66-88  =>write user data 
+
 //#define bin_inside 
 #define checksum_inside
 using namespace std;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	std::string WAPD_value;
 	clock_t start_time, end_time;
 	float total_time = 0;
 	cmdline::parser theArgs;
@@ -25,14 +29,16 @@ int _tmain(int argc, _TCHAR* argv[])
 #else
 	theArgs.add<string>("AFN", 'f', "AP file name", false, "");
 #endif
-	theArgs.add<string>("COM", 'c', "com port number", false, ""); 
+	theArgs.add<string>("COM", 'c', "COM port number", false, ""); 
+	theArgs.add<string>("WAPD", 'w', "write APROM user data area, ascii string", false, "");
 	theArgs.add<bool>("USB", 'u', "USB port", false, false);
-	theArgs.add<bool>("All", 'g', "ldrom boot chek, check version, erase, verify, boot to aprom ", false, false);
-	theArgs.add<bool>("RUNAP", 'a', "run aprom run", false, false);
-	theArgs.add<bool>("RUNLD", 'l', "run ldrom run", false, false);
-	theArgs.add<bool>("FWVER", 'v', "dump fw version", false, false);
+	theArgs.add<bool>("All", 'g', "Ldrom boot chek, check version, erase, verify, boot to aprom ", false, false);
+	theArgs.add<bool>("RUNAP", 'a', "Run aprom run", false, false);
+	theArgs.add<bool>("RUNLD", 'l', "Run ldrom run", false, false);
+	theArgs.add<bool>("FWVER", 'v', "Dump mcu FW version", false, false);
 	theArgs.add<bool>("BC", 'b', "Boot Check", false, false);
-	theArgs.add<bool>("Time", 't', "show progamming time", false, false);
+	theArgs.add<bool>("Time", 't', "Show progamming time", false, false);
+	theArgs.add<bool>("EAPD", 'e', "Erase APROM user data area", false, false);	
 	theArgs.set_program_name(argv[0]);
 	theArgs.parse_check(argc, &argv[0]);
 
@@ -55,14 +61,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	 
 	ISP_COMMAND *ISP = new ISP_COMMAND();
-
-
-
 //uart interface
 	if (theArgs.get<string>("COM") != "")
 	{
 		std::string comPortStr = theArgs.get<std::string>("COM");
-		_TCHAR comPort[256]; // 設定一個足夠大的緩衝區
+		_TCHAR comPort[256]; // set buffer
 
 		_tcscpy(comPort, _T(comPortStr.c_str()));
 		if (ISP->OPEN_COMPORT(comPort) != RES_CONNECT)
@@ -162,6 +165,10 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			ISP->RUN_TO_LDROM_UART();
 		}
+		if (theArgs.get<bool>("EAPD") == 1)
+		{
+			
+		}
 	UART_EXIT:
 		ISP->CLOSE_UART_PORT();
 		delete ISP;
@@ -180,6 +187,26 @@ int _tmain(int argc, _TCHAR* argv[])
 		//START ;
 		ISP->SN_PACKAGE_USB();
 		ISP->SN_PACKAGE_USB();
+
+
+		WAPD_value = theArgs.get<std::string>("WAPD");
+		if (WAPD_value.empty())
+		{
+			//printf("Please input -WAPD [STRING]\n\r");
+		}
+		else
+		{
+					std::string WAPDStr = theArgs.get<std::string>("WAPD");
+					_TCHAR user_String[256]; // 設定一個足夠大的緩衝區
+					_tcscpy(user_String, _T(WAPDStr.c_str()));
+					unsigned char wlength = _tcslen(user_String);
+					//WRITE DATA TO BUFFER
+					printf("user string:%s\n\r", user_String);
+					printf("user string length:%d\n\r", wlength);
+					ISP->WRITE_APROM_DATA_USB(user_String, wlength);
+		}
+		
+
 		if (theArgs.get<bool>("All") == 1)
 		{
 #ifdef bin_inside	
@@ -195,15 +222,16 @@ int _tmain(int argc, _TCHAR* argv[])
 			else
 			{
 				std::string AFNStr = theArgs.get<std::string>("AFN");
-				_TCHAR fileanme[256]; // 設定一個足夠大的緩衝區
-				_tcscpy(fileanme, _T(AFNStr.c_str()));
-				if (ISP->File_Open_APROM(fileanme) == RES_FILE_NO_FOUND)
+				_TCHAR filename[256]; // 設定一個足夠大的緩衝區
+				_tcscpy(filename, _T(AFNStr.c_str()));
+
+				if (ISP->File_Open_APROM(filename) == RES_FILE_NO_FOUND)
 				{
 					printf("FILE NO FOUND\n\r");
 					delete ISP;
 					return 0;
 				}
-				printf("File name: %s\n\r", fileanme);
+				printf("File name: %s\n\r", filename);
 				printf("File size: %d\n\r", ISP->file_size);
 				printf("File checksum: %d\n\r", ISP->file_checksum);
 				printf("File size: 0x%x\n\r", ISP->file_size);
@@ -261,6 +289,13 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			ISP->RUN_TO_LDROM_USB();
 		}
+		if (theArgs.get<bool>("EAPD") == 1)
+		{
+			printf("erase user data in aprom\n\r");
+			ISP->Erase_APROM_DATA_USB();
+		}
+
+		
 	USB_EXIT:
 		//close usb port
 		ISP->CLOSE_USB_PORT();

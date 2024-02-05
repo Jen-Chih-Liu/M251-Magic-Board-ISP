@@ -14,7 +14,19 @@ DWORD Length;
 unsigned char buffer[Package_Size]={0};
 unsigned int PacketNumber;
 unsigned int Address,Size;
+unsigned char send_buf[64];
+#define CMD_UPDATE_APROM	0x000000A0
+void WordsCpy(void *dest, void *src, unsigned int size)
+{
+	unsigned char *pu8Src, *pu8Dest;
+	unsigned int i;
 
+	pu8Dest = (unsigned char *)dest;
+	pu8Src = (unsigned char *)src;
+
+	for (i = 0; i < size; i++)
+		pu8Dest[i] = pu8Src[i];
+}
 ISP_STATE ISP_COMMAND::OPEN_USBPORT(void)
 {
 	if(!pUSB.OpenDevice(USB_VID, USB_PID))
@@ -288,6 +300,56 @@ unsigned int ISP_COMMAND::READFW_VERSION_USB(void)
 }
 
 
+void ISP_COMMAND::Erase_APROM_DATA_USB(void)
+{
+	clock_t start_time, end_time;
+	float total_time = 0;
+
+	unsigned char cmd[Package_Size] = { 0xFA,0,0,0,
+		(PacketNumber & 0xff),((PacketNumber >> 8) & 0xff),((PacketNumber >> 16) & 0xff),((PacketNumber >> 24) & 0xff) };
+	pUSB.WriteFile((unsigned char *)&cmd, sizeof(cmd), &Length, 2000);
+	start_time = clock(); /* mircosecond */
+	while (1)
+	{
+		pUSB.ReadFile(buffer, Package_Size, &Length, 2000);
+		dbg_printf("package: 0x%x\n\r", buffer[4]);
+		if ((buffer[4] | ((buffer[5] << 8) & 0xff00) | ((buffer[6] << 16) & 0xff0000) | ((buffer[7] << 24) & 0xff000000)) == (PacketNumber + 1))
+			break;
+
+		end_time = clock();
+		/* CLOCKS_PER_SEC is defined at time.h */
+		if ((end_time - start_time) > Time_Out_Value)
+			break;
+
+	}
+	PacketNumber += 2;	
+}
+
+void ISP_COMMAND::WRITE_APROM_DATA_USB(_TCHAR* temp, unsigned char w_length)
+{
+	clock_t start_time, end_time;
+	float total_time = 0;
+
+	unsigned char cmd[Package_Size] = { 0xFB,0,0,0,
+		(PacketNumber & 0xff),((PacketNumber >> 8) & 0xff),((PacketNumber >> 16) & 0xff),((PacketNumber >> 24) & 0xff) };
+	WordsCpy(cmd + 8, temp, w_length);
+	pUSB.WriteFile((unsigned char *)&cmd, sizeof(cmd), &Length, 2000);
+	start_time = clock(); /* mircosecond */
+	while (1)
+	{
+		pUSB.ReadFile(buffer, Package_Size, &Length, 2000);
+		dbg_printf("package: 0x%x\n\r", buffer[4]);
+		if ((buffer[4] | ((buffer[5] << 8) & 0xff00) | ((buffer[6] << 16) & 0xff0000) | ((buffer[7] << 24) & 0xff000000)) == (PacketNumber + 1))
+			break;
+
+		end_time = clock();
+		/* CLOCKS_PER_SEC is defined at time.h */
+		if ((end_time - start_time) > Time_Out_Value)
+			break;
+
+	}
+	PacketNumber += 2;
+}
 unsigned int ISP_COMMAND::CHECK_BOOT_USB(void)
 {
 	clock_t start_time, end_time;
@@ -616,19 +678,7 @@ void ISP_COMMAND::APROM_AND_CHECKSUM(void)
 	file_size = APROM_SIZE;
 	file_checksum = file_checksum_temp; //for all aprom 
 }
-unsigned char send_buf[64];
-#define CMD_UPDATE_APROM	0x000000A0
-void WordsCpy(void *dest, void *src, unsigned int size)
-{
-	unsigned char *pu8Src, *pu8Dest;
-	unsigned int i;
 
-	pu8Dest = (unsigned char *)dest;
-	pu8Src = (unsigned char *)src;
-
-	for (i = 0; i < size; i++)
-		pu8Dest[i] = pu8Src[i];
-}
 ISP_STATE ISP_COMMAND::UPDATE_APROM_UART(void)
 {
 	clock_t start_time, end_time;

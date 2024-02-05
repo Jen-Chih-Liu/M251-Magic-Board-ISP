@@ -99,14 +99,14 @@ int ParseCmd(unsigned char *buffer, uint8_t len)
         //return 1: APROM, 2: LDROM
         outpw(response + 8, (FMC->ISPCTL & 0x2) ? 2 : 1);
     }
-		else if (lcmd == CMD_APROM_ERASE)
+		else if (lcmd == CMD_APROM_DATA_ERASE)
     {
      //ERASE AP PAGE  
 		  EraseAP(0X20000, 512);		//it is fix in 0x20000	
     }
-		else if (lcmd == CMD_APROM_WRITE)
+		else if (lcmd == CMD_APROM_DATA_WRITE)
     {
-       
+       WriteData(0X20000, 0X20000 + 48, (uint32_t *)pSrc); 
     }
 		
 

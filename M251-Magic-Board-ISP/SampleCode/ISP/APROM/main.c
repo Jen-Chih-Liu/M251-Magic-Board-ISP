@@ -122,8 +122,8 @@ int32_t main(void)
 
         /* Using polling mode and Removed Interrupt Table to reduce code size for M251 */
    
-					
-					
+				while(1)	
+				{
 					  //check vbus is plug in
 					 while (USBD_IS_ATTACHED())
 					 {
@@ -179,7 +179,7 @@ int32_t main(void)
         }
 
 			
-
+			}
 
     /* Trap the CPU */
     while (1);
