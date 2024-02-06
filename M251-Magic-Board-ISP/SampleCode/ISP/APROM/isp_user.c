@@ -102,11 +102,11 @@ int ParseCmd(unsigned char *buffer, uint8_t len)
 		else if (lcmd == CMD_APROM_DATA_ERASE)
     {
      //ERASE AP PAGE  
-		  EraseAP(0X20000, 512);		//it is fix in 0x20000	
+		  EraseAP(user_aprom_data_address, 512);		//it is fix in 0x20000	
     }
 		else if (lcmd == CMD_APROM_DATA_WRITE)
     {
-       WriteData(0X20000, 0X20000 + 48, (uint32_t *)pSrc); 
+       WriteData(user_aprom_data_address, user_aprom_data_address + 48, (uint32_t *)pSrc); 
     }
 		else if (lcmd == CMD_RUN_APROM || lcmd == CMD_RUN_LDROM || lcmd == CMD_RESET)
     {

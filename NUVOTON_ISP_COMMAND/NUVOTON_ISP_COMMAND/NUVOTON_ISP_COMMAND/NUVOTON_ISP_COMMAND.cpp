@@ -110,6 +110,16 @@ int _tmain(int argc, _TCHAR* argv[])
 				printf("File name: %s\n\r", fileanme);
 				printf("File size: %d\n\r", ISP->file_size);
 				printf("File checksum: %d\n\r", ISP->file_checksum);
+
+
+				if (ISP->file_size > baprom_size)
+				{
+					printf("bin file over flash size\n\r");
+					delete ISP;
+					return 0;
+				}
+				printf("File size: 0x%x\n\r", ISP->file_size);
+				printf("File checksum: 0x%x\n\r", ISP->file_checksum);
 			}
 
 #endif
@@ -234,6 +244,14 @@ int _tmain(int argc, _TCHAR* argv[])
 				printf("File name: %s\n\r", filename);
 				printf("File size: %d\n\r", ISP->file_size);
 				printf("File checksum: %d\n\r", ISP->file_checksum);
+
+				if (ISP->file_size > baprom_size)
+				{
+					printf("bin file over flash size\n\r");
+					delete ISP;
+					return 0;
+				}
+
 				printf("File size: 0x%x\n\r", ISP->file_size);
 				printf("File checksum: 0x%x\n\r", ISP->file_checksum);
 			}

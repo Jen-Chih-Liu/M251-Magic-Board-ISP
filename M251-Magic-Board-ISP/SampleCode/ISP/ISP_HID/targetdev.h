@@ -19,7 +19,7 @@ extern "C"
 #include "NuMicro.h"
 #include "isp_user.h"
 #define DetectPin                   PA0
-#define ap_rom_size 128*1024
+#define ap_rom_size 63*1024
 #define g_ckbase  (ap_rom_size - 8)
 
 #ifdef __cplusplus

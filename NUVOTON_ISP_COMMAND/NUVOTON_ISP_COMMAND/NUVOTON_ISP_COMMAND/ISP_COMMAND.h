@@ -1,7 +1,7 @@
 #pragma once
 #include "afxwin.h"
 #include "afxcmn.h"
-#define baprom_size 128*1024
+#define baprom_size 63*1024
 typedef enum {
 	RES_FALSE = 0,		
 	RES_PASS,		    
