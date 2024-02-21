@@ -33,9 +33,12 @@
 #define CMD_GET_FLASHMODE           0x000000CA
 #define CMD_APROM_DATA_ERASE           0x000000FA
 #define CMD_APROM_DATA_WRITE           0x000000FB
-#define CMD_APROM_DATA_READ           0x000000FC
+#define CMD_RTC_UPDATE                0x000000FC
+#define CMD_APROM_IMAGE_ERASE           0x000000FD
+#define CMD_APROM_IMAGE_WRITE           0x000000FE
 #define CMD_RESEND_PACKET           0x000000FF
 #define user_aprom_data_address (63*1024)
+#define user_aprom_image_address (63*1024)+512
 
 extern void GetDataFlashInfo(uint32_t *addr, uint32_t *size);
 extern uint32_t GetApromSize(void);

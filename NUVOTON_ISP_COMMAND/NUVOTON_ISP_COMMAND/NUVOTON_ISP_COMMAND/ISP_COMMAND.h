@@ -70,6 +70,9 @@ public:
 	ISP_STATE File_Open_APROM(_TCHAR* temp);
 	void WRITE_APROM_DATA_USB(_TCHAR* temp,unsigned char w_length);
 	void Erase_APROM_DATA_USB(void);
+	ISP_STATE WRITE_APROM_IMAGE_USB(_TCHAR* temp);
+	void Erase_APROM_IMAGE_USB(void);
+	void UPDATE_RTC_USB(void);
 	ISP_STATE UPDATE_APROM_UART(void);		
 	ISP_STATE UPDATE_APROM_USB(void);
 	void RUN_TO_APROM_UART(void);

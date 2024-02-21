@@ -1,8 +1,9 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "ISP_COMMAND.h"
 #include "HID.h"
 #include <time.h>
 #include "aprom.h"
+#include "stdint.h"
 //#define dbg_printf printf
 #define dbg_printf(...) 
 #define USB_VID 0x0416
@@ -43,8 +44,8 @@ ISP_STATE ISP_COMMAND::OPEN_USBPORT(void)
 
 ISP_STATE ISP_COMMAND::OPEN_COMPORT(_TCHAR* temp)
 {
-		COMMTIMEOUTS CommTimeOuts ; //���峬ʱ�ṹ������д�ýṹ
-		DCB dcb;                    //�������ݿ��ƿ�ṹ 
+		COMMTIMEOUTS CommTimeOuts ; //¶¨Òå³¬Ê±½á¹¹£¬²¢ÌîÐ´¸Ã½á¹¹
+		DCB dcb;                    //¶¨ÒåÊý¾Ý¿ØÖÆ¿é½á¹¹ 
 		
 		memset(&CommTimeOuts, 0, sizeof(CommTimeOuts));
 		memset(&dcb, 0, sizeof(dcb));
@@ -98,8 +99,8 @@ return RES_CONNECT_FALSE;
 
 ISP_STATE ISP_COMMAND::OPEN_COMPORT(void)
 {
-		COMMTIMEOUTS CommTimeOuts ; //���峬ʱ�ṹ������д�ýṹ
-		DCB dcb;                    //�������ݿ��ƿ�ṹ 
+		COMMTIMEOUTS CommTimeOuts ; //¶¨Òå³¬Ê±½á¹¹£¬²¢ÌîÐ´¸Ã½á¹¹
+		DCB dcb;                    //¶¨ÒåÊý¾Ý¿ØÖÆ¿é½á¹¹ 
 		
 		memset(&CommTimeOuts, 0, sizeof(CommTimeOuts));
 		memset(&dcb, 0, sizeof(dcb));
@@ -349,6 +350,164 @@ void ISP_COMMAND::WRITE_APROM_DATA_USB(_TCHAR* temp, unsigned char w_length)
 
 	}
 	PacketNumber += 2;
+}
+
+void ISP_COMMAND::UPDATE_RTC_USB(void)
+{
+	clock_t start_time, end_time;
+	float total_time = 0;
+	time_t tmpcal_ptr;
+	struct tm *tmp_ptr = NULL;
+	time(&tmpcal_ptr);
+	tmp_ptr = localtime(&tmpcal_ptr);//转换成当地时间
+
+	printf ("after localtime, the time is:%d.%d.%d ", (1900+tmp_ptr->tm_year), (1+tmp_ptr->tm_mon), tmp_ptr->tm_mday);
+	printf("%d:%d:%d\n", tmp_ptr->tm_hour, tmp_ptr->tm_min, tmp_ptr->tm_sec);
+
+	unsigned char cmd[Package_Size] = { 0xFC,0,0,0,
+		(PacketNumber & 0xff),((PacketNumber >> 8) & 0xff),((PacketNumber >> 16) & 0xff),((PacketNumber >> 24) & 0xff),
+                 tmp_ptr->tm_year,tmp_ptr->tm_mon+1,tmp_ptr->tm_mday,tmp_ptr->tm_hour,tmp_ptr->tm_min, tmp_ptr->tm_sec
+              };
+	pUSB.WriteFile((unsigned char *)&cmd, sizeof(cmd), &Length, 2000);
+	start_time = clock(); /* mircosecond */
+	while (1)
+	{
+		pUSB.ReadFile(buffer, Package_Size, &Length, 2000);
+		dbg_printf("package: 0x%x\n\r", buffer[4]);
+		if ((buffer[4] | ((buffer[5] << 8) & 0xff00) | ((buffer[6] << 16) & 0xff0000) | ((buffer[7] << 24) & 0xff000000)) == (PacketNumber + 1))
+			break;
+
+		end_time = clock();
+		/* CLOCKS_PER_SEC is defined at time.h */
+		if ((end_time - start_time) > Time_Out_Value)
+			break;
+
+	}
+	PacketNumber += 2;	
+}
+
+
+void ISP_COMMAND::Erase_APROM_IMAGE_USB(void)
+{
+	clock_t start_time, end_time;
+	float total_time = 0;
+
+	unsigned char cmd[Package_Size] = { 0xFD,0,0,0,
+		(PacketNumber & 0xff),((PacketNumber >> 8) & 0xff),((PacketNumber >> 16) & 0xff),((PacketNumber >> 24) & 0xff) };
+	pUSB.WriteFile((unsigned char *)&cmd, sizeof(cmd), &Length, 2000);
+	start_time = clock(); /* mircosecond */
+	while (1)
+	{
+		pUSB.ReadFile(buffer, Package_Size, &Length, 2000);
+		dbg_printf("package: 0x%x\n\r", buffer[4]);
+		if ((buffer[4] | ((buffer[5] << 8) & 0xff00) | ((buffer[6] << 16) & 0xff0000) | ((buffer[7] << 24) & 0xff000000)) == (PacketNumber + 1))
+			break;
+
+		end_time = clock();
+		/* CLOCKS_PER_SEC is defined at time.h */
+		if ((end_time - start_time) > Time_Out_Value)
+			break;
+
+	}
+	PacketNumber += 2;	
+}
+
+#pragma pack(push, 1) // Ensure structure alignment
+typedef struct {
+	uint16_t type;           // 文件类型，必须为 'BM'
+	uint32_t size;           // 文件大小
+	uint16_t reserved1;      // 保留字段
+	uint16_t reserved2;      // 保留字段
+	uint32_t offset;         // 图像数据起始位置
+	uint32_t header_size;    // 文件头大小
+	int32_t  width;          // 图像宽度
+	int32_t  height;         // 图像高度
+	uint16_t planes;         // 颜色平面数，必须为1
+	uint16_t bpp;            // 每像素位数
+	uint32_t compression;    // 压缩方式，0 表示不压缩
+	uint32_t img_size;       // 图像数据大小
+	int32_t  x_ppm;          // 水平分辨率
+	int32_t  y_ppm;          // 垂直分辨率
+	uint32_t color_used;     // 使用的颜色数
+	uint32_t color_important;// 重要的颜色数
+} BMPHeader;
+#pragma pack(pop)
+ISP_STATE ISP_COMMAND::WRITE_APROM_IMAGE_USB(_TCHAR* temp)
+{
+	clock_t start_time, end_time;
+	float total_time = 0;
+
+
+	FILE *file = fopen(temp, "rb"); // 以二进制只读方式打开文件
+	if (file == NULL) {
+		printf("Error opening file");
+		return RES_FILE_NO_FOUND;
+	}
+
+	BMPHeader header;
+	fread(&header, sizeof(header), 1, file); // 读取文件头信息
+
+	// 验证是否为 BMP 文件
+	if (header.type != 0x4D42) {
+		fprintf(stderr, "Not a BMP file\n");
+		fclose(file);
+		return RES_FILE_NO_FOUND;
+	}
+
+	// 打印图像信息
+	printf("Width: %d\n", header.width);
+	printf("Height: %d\n", header.height);
+	printf("Bits per pixel: %d\n", header.bpp);
+	if ((header.width !=8 )|| (header.height != 8))
+		return RES_FILE_NO_FOUND;
+	// 计算每行像素字节数
+	int bytes_per_pixel = header.bpp / 8;
+	int row_size = header.width / 8; // 单色图像中每个像素只占用一个位
+	if (header.width % 8 != 0)
+		row_size++; // 如果图像宽度不能被 8 整除，则需要向上取整
+
+	// 分配内存来存储像素数据
+	unsigned char *data = (unsigned char*)malloc(4 * header.height);
+	if (data == NULL) {
+		printf("Memory allocation failed");
+		fclose(file);
+		return RES_FILE_NO_FOUND;
+	}
+
+	// 读取像素数据
+	fseek(file, header.offset, SEEK_SET);
+	fread(data, 4 * header.height, 1, file);
+	for (int i = 0; i < 32; i++)
+		printf("%d=0x%x\n\r", i, data[i]);
+
+	//to do
+	unsigned char cmd[Package_Size] = { 0xFE,0,0,0,
+		(PacketNumber & 0xff),((PacketNumber >> 8) & 0xff),((PacketNumber >> 16) & 0xff),((PacketNumber >> 24) & 0xff),
+		data[0],data[4],data[8],data[12],data[16],data[20],data[24],data[28]
+	};
+	//WordsCpy(cmd + 8, temp, w_length);
+	pUSB.WriteFile((unsigned char *)&cmd, sizeof(cmd), &Length, 2000);
+	start_time = clock(); /* mircosecond */
+	while (1)
+	{
+		pUSB.ReadFile(buffer, Package_Size, &Length, 2000);
+		dbg_printf("package: 0x%x\n\r", buffer[4]);
+		if ((buffer[4] | ((buffer[5] << 8) & 0xff00) | ((buffer[6] << 16) & 0xff0000) | ((buffer[7] << 24) & 0xff000000)) == (PacketNumber + 1))
+			break;
+
+		end_time = clock();
+		/* CLOCKS_PER_SEC is defined at time.h */
+		if ((end_time - start_time) > Time_Out_Value)
+			break;
+
+	}
+	PacketNumber += 2;
+	// 释放内存并关闭文件
+	
+	free(data);
+	// 在这里可以使用像素数据进行进一步处理
+	fclose(file);
+	return RES_SN_OK;
 }
 unsigned int ISP_COMMAND::CHECK_BOOT_USB(void)
 {

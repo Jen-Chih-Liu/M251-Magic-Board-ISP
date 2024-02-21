@@ -108,6 +108,24 @@ int ParseCmd(unsigned char *buffer, uint8_t len)
     {
        WriteData(user_aprom_data_address, user_aprom_data_address + 48, (uint32_t *)pSrc); 
     }
+		else if (lcmd == CMD_APROM_IMAGE_ERASE)
+    {
+     //ERASE AP PAGE  
+		  EraseAP(user_aprom_image_address, 512);			
+    }
+		else if (lcmd == CMD_APROM_IMAGE_WRITE)
+    {
+       WriteData(user_aprom_image_address, user_aprom_image_address + 48, (uint32_t *)pSrc); 
+    }
+		else if (lcmd == CMD_RTC_UPDATE)
+    {
+      printf("0x%x\n\r",(uint8_t *)pSrc); //year 
+			printf("0x%x\n\r",(uint8_t *)pSrc+1); //month
+			printf("0x%x\n\r",(uint8_t *)pSrc+2); //day
+			printf("0x%x\n\r",(uint8_t *)pSrc+3); //hour
+			printf("0x%x\n\r",(uint8_t *)pSrc+4); //sec
+			printf("0x%x\n\r",(uint8_t *)pSrc+5); //min
+    }
 		else if (lcmd == CMD_RUN_APROM || lcmd == CMD_RUN_LDROM || lcmd == CMD_RESET)
     {
         outpw(&SYS->RSTSTS, 3);//clear bit
