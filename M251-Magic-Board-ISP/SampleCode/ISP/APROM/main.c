@@ -48,7 +48,7 @@ void SYS_Init(void)
     CLK->PCLKDIV = CLK_PCLKDIV_APB0DIV_DIV2 | CLK_PCLKDIV_APB1DIV_DIV2;
 
     /* Enable module clock */
-    CLK->APBCLK0 |= CLK_APBCLK0_USBDCKEN_Msk;
+    //CLK->APBCLK0 |= CLK_APBCLK0_USBDCKEN_Msk;
     CLK->AHBCLK |= CLK_AHBCLK_ISPCKEN_Msk | CLK_AHBCLK_GPACKEN_Msk | CLK_AHBCLK_EXSTCKEN_Msk;
     /*---------------------------------------------------------------------------------------------------------*/
     /* Init I/O Multi-function                                                                                 */
@@ -89,7 +89,7 @@ static uint16_t CalCheckSum(uint32_t start, uint32_t len)
     return lcksum;
     
 }
-
+unsigned char usb_detect_flag=0;
 /*---------------------------------------------------------------------------------------------------------*/
 /*  Main Function                                                                                          */
 /*---------------------------------------------------------------------------------------------------------*/
@@ -103,13 +103,31 @@ int32_t main(void)
     /* Init system and multi-function I/O */
     SYS_Init();
 
+usb_detect_flag=0;
 
-	
-        /* Open USB controller */
-        USBD_Open(&gsInfo, HID_ClassRequest, NULL);
 
-        /*Init Endpoint configuration for HID */
-        HID_Init();
+        /* Using polling mode and Removed Interrupt Table to reduce code size for M251 */
+   
+				while(1)	
+				{
+				
+					CLK->APBCLK0 |= CLK_APBCLK0_USBDCKEN_Msk;
+					if (USBD_IS_ATTACHED())
+					{
+						usb_detect_flag++;
+					}
+					else
+					{
+					  usb_detect_flag=0;
+					}
+					if (USBD_IS_ATTACHED()&&usb_detect_flag>2)
+					{
+						
+           /* Open USB controller */
+           USBD_Open(&gsInfo, HID_ClassRequest, NULL);
+
+          /*Init Endpoint configuration for HID */
+          HID_Init();
 
         /* Start USB device */
         USBD_Start();
@@ -119,11 +137,8 @@ int32_t main(void)
 
         /* Clear SOF */
         USBD_CLR_INT_FLAG(USBD_INTSTS_SOFIF_Msk);
-
-        /* Using polling mode and Removed Interrupt Table to reduce code size for M251 */
-   
-				while(1)	
-				{
+					
+					
 					  //check vbus is plug in
 					 while (USBD_IS_ATTACHED())
 					 {
@@ -178,7 +193,8 @@ int32_t main(void)
             }
         }
 
-			
+			}
+					CLK->APBCLK0 &= ~CLK_APBCLK0_USBDCKEN_Msk;
 			}
 
     /* Trap the CPU */

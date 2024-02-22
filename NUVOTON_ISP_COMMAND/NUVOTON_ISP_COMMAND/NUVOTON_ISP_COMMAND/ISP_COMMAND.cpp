@@ -366,7 +366,7 @@ void ISP_COMMAND::UPDATE_RTC_USB(void)
 
 	unsigned char cmd[Package_Size] = { 0xFC,0,0,0,
 		(PacketNumber & 0xff),((PacketNumber >> 8) & 0xff),((PacketNumber >> 16) & 0xff),((PacketNumber >> 24) & 0xff),
-                 tmp_ptr->tm_year,tmp_ptr->tm_mon+1,tmp_ptr->tm_mday,tmp_ptr->tm_hour,tmp_ptr->tm_min, tmp_ptr->tm_sec
+                 tmp_ptr->tm_year,tmp_ptr->tm_mon+1,tmp_ptr->tm_mday,tmp_ptr->tm_wday,tmp_ptr->tm_hour,tmp_ptr->tm_min, tmp_ptr->tm_sec
               };
 	pUSB.WriteFile((unsigned char *)&cmd, sizeof(cmd), &Length, 2000);
 	start_time = clock(); /* mircosecond */

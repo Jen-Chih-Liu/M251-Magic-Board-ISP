@@ -122,9 +122,10 @@ int ParseCmd(unsigned char *buffer, uint8_t len)
       printf("0x%x\n\r",(uint8_t *)pSrc); //year 
 			printf("0x%x\n\r",(uint8_t *)pSrc+1); //month
 			printf("0x%x\n\r",(uint8_t *)pSrc+2); //day
-			printf("0x%x\n\r",(uint8_t *)pSrc+3); //hour
-			printf("0x%x\n\r",(uint8_t *)pSrc+4); //sec
-			printf("0x%x\n\r",(uint8_t *)pSrc+5); //min
+			printf("0x%x\n\r",(uint8_t *)pSrc+3); //weekly of day
+			printf("0x%x\n\r",(uint8_t *)pSrc+4); //hour
+			printf("0x%x\n\r",(uint8_t *)pSrc+5); //sec
+			printf("0x%x\n\r",(uint8_t *)pSrc+6); //min
     }
 		else if (lcmd == CMD_RUN_APROM || lcmd == CMD_RUN_LDROM || lcmd == CMD_RESET)
     {
