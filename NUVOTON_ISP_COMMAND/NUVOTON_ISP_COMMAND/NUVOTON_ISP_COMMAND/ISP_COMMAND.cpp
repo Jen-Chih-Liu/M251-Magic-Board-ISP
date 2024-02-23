@@ -479,11 +479,19 @@ ISP_STATE ISP_COMMAND::WRITE_APROM_IMAGE_USB(_TCHAR* temp)
 	fread(data, 4 * header.height, 1, file);
 	for (int i = 0; i < 32; i++)
 		printf("%d=0x%x\n\r", i, data[i]);
-
+	unsigned char tempdata[8] = { 0 };
+	tempdata[0] = ~data[0];
+	tempdata[1] = ~data[4];  
+	tempdata[2] = ~data[8]; 
+	tempdata[3] = ~data[12]; 
+	tempdata[4] = ~data[16],
+	tempdata[5] = ~data[20];
+	tempdata[6] = ~data[24];
+	tempdata[7] = ~data[28];
 	//to do
 	unsigned char cmd[Package_Size] = { 0xFE,0,0,0,
 		(PacketNumber & 0xff),((PacketNumber >> 8) & 0xff),((PacketNumber >> 16) & 0xff),((PacketNumber >> 24) & 0xff),
-		data[0],data[4],data[8],data[12],data[16],data[20],data[24],data[28]
+		tempdata[0],tempdata[1],tempdata[2],tempdata[3],tempdata[4],tempdata[5],tempdata[6],tempdata[7]
 	};
 	//WordsCpy(cmd + 8, temp, w_length);
 	pUSB.WriteFile((unsigned char *)&cmd, sizeof(cmd), &Length, 2000);
